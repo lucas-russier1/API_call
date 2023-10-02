@@ -1,0 +1,77 @@
+import requests
+import csv
+
+
+base_url = "http://v0.ovapi.nl"
+endpoint = "/line/"
+
+def get_lines():
+    response = requests.get(base_url + endpoint)
+    if response.status_code == 200: #200 means that the HTTP Request suceeded
+        return response.json()
+    else:
+        print(f"Error: {response.status_code}")
+        return None
+
+
+def get_line_details(data_owner_code, line_planning_number, line_direction):
+    line_details_endpoint = f"/line/{data_owner_code}_{line_planning_number}_{line_direction}"
+    response = requests.get(base_url + line_details_endpoint)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        print(f"Error: {response.status_code}")
+        return None
+
+
+def store_lines_in_csv(lines_data):
+    with open("ovapi_data.csv", mode="w", newline="", encoding="utf-8") as csv_file:
+        fieldnames = ["line_id", "line_name", "transport_type", "destination_name", "line_details"]
+        writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+        writer.writeheader()
+
+        for line_id, line_info in lines_data.items():
+            writer.writerow({
+                "line_id": line_id,
+                "line_name": line_info.get("LineName", ""),
+                "transport_type": line_info.get("TransportType", ""),
+                "destination_name": line_info.get("DestinationName50", ""),
+                "line_details": ""
+            })
+
+def main():
+    # Get a list of existing lines
+    lines_data = get_lines()
+
+    if lines_data:
+        # Store basic line information in CSV
+        store_lines_in_csv(lines_data)
+
+        # Choose a specific line for detailed information
+        data_owner_code = "GVB"
+        line_planning_number = "5"
+        line_direction = "1"
+
+        # Get details about a specific line
+        line_details = get_line_details(data_owner_code, line_planning_number, line_direction)
+
+        if line_details:
+            # Update the CSV file with detailed information for the chosen line
+            with open("ovapi_data.csv", mode="a", newline="", encoding="utf-8") as csv_file:
+                fieldnames = ["line_id", "line_details"]
+                writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+
+                writer.writerow({
+                    "line_id": f"{data_owner_code}_{line_planning_number}_{line_direction}",
+                    "line_details": str(line_details)
+                })
+            print("Data successfully updated in ovapi_data.csv")
+        else:
+            print("Failed to retrieve line details.")
+    else:
+        print("Failed to retrieve line data.")
+
+if __name__ == "__main__":
+    main()
+
+
