@@ -1,12 +1,27 @@
-response = requests.get('http://v0.ovapi.nl/line/')
+import requests
+import csv
 
+#Query the API and store it into a JSON file
+response = requests.get('http://v0.ovapi.nl/line/')
 my_json = response.json()
 
+#Create files for our data and for our CSV headers
 our_data = []
-csvheader=['LineWheelchairAccessible','TransportType','DestinationName50','DataOwnerCode','DestinationCode','LinePublicNumber','LinePlanningNumber','LineName','LineDirection']
+csvheader=['DictKey',
+           'LineWheelchairAccessible',
+           'TransportType',
+           'DestinationName50',
+           'DataOwnerCode',
+           'DestinationCode',
+           'LinePublicNumber',
+           'LinePlanningNumber',
+           'LineName',
+           'LineDirection']
 
-for x in my_json.values():
+#Add dictionary elements to our_data
+for key, x in my_json.items():
     listing = [
+        key,
         x['LineWheelchairAccessible'],
         x['TransportType'],
         x['DestinationName50'],
@@ -19,14 +34,10 @@ for x in my_json.values():
     ]
     our_data.append(listing)
 
-with open('ovapi_data.csv', 'w', encoding='UTF8', newline='') as file:
+#Write our data in a CSV file
+with open('ovapi_data.csv', 'w', encoding='UTF8', newline='') as file: #'w' stands for write mode
     writer=csv.writer(file)
-    
-    writer.writerow(csvheader)
-    writer.writerows(our_data)
+    writer.writerow(csvheader) #adds headers
+    writer.writerows(our_data) # adds data
 
 print('API data has been added to \'ovapi_data.csv\'')
-
-
-
-
